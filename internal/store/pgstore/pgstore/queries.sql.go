@@ -46,6 +46,40 @@ func (q *Queries) GetRoom(ctx context.Context, id uuid.UUID) (Room, error) {
 	return i, err
 }
 
+const getRoomMessages = `-- name: GetRoomMessages :many
+SELECT
+    "id", "room_id", "message", "reaction_count", "answered"
+FROM messages
+WHERE
+    room_id = $1
+`
+
+func (q *Queries) GetRoomMessages(ctx context.Context, roomID uuid.UUID) ([]Message, error) {
+	rows, err := q.db.Query(ctx, getRoomMessages, roomID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Message
+	for rows.Next() {
+		var i Message
+		if err := rows.Scan(
+			&i.ID,
+			&i.RoomID,
+			&i.Message,
+			&i.ReactionCount,
+			&i.Answered,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getRooms = `-- name: GetRooms :many
 SELECT
     "id", "theme"
@@ -93,8 +127,8 @@ func (q *Queries) InsertMessage(ctx context.Context, arg InsertMessageParams) (u
 
 const insertRoom = `-- name: InsertRoom :one
 INSERT INTO rooms
-    ("theme") VALUES
-    ( $1 ) 
+    ( "theme" ) VALUES
+    ( $1 )
 RETURNING "id"
 `
 

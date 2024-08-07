@@ -11,8 +11,8 @@ FROM rooms;
 
 -- name: InsertRoom :one
 INSERT INTO rooms
-    ("theme") VALUES
-    ( $1 ) 
+    ( "theme" ) VALUES
+    ( $1 )
 RETURNING "id";
 
 -- name: GetMessage :one
@@ -21,6 +21,13 @@ SELECT
 FROM messages
 WHERE
     id = $1;
+
+-- name: GetRoomMessages :many
+SELECT
+    "id", "room_id", "message", "reaction_count", "answered"
+FROM messages
+WHERE
+    room_id = $1;
 
 -- name: InsertMessage :one
 INSERT INTO messages
